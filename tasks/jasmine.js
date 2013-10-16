@@ -22,12 +22,13 @@ module.exports = function(grunt) {
   var junitTemplate = __dirname + '/jasmine/templates/JUnit.tmpl';
 
   var status = {
-    specs    : 0,
-    failed   : 0,
-    passed   : 0,
-    total    : 0,
-    skipped  : 0,
-    duration : 0
+    specs       : 0,
+    specsFailed : 0,
+    failed      : 0,
+    passed      : 0,
+    total       : 0,
+    skipped     : 0,
+    duration    : 0
   };
 
   grunt.registerMultiTask('jasmine', 'Run jasmine specs headlessly through PhantomJS.', function() {
@@ -169,7 +170,8 @@ module.exports = function(grunt) {
       var failed = thisRun.executed_specs - thisRun.passed_specs;
       var spec_str = thisRun.executed_specs + (thisRun.executed_specs === 1 ? " spec, " : " specs, ");
       var fail_str = failed + (failed === 1 ? " failure in " : " failures in ");
-      grunt.log.writeln(spec_str + fail_str + (dur/1000) + "s.");
+      status.duration = dur/1000;
+      grunt.log.writeln(spec_str + fail_str + status.duration + "s.");
     });
 
     phantomjs.on('jasmine.testDone',function(totalAssertions, passedAssertions, failedAssertions, skippedAssertions){
@@ -178,6 +180,9 @@ module.exports = function(grunt) {
       status.passed  += passedAssertions;
       status.total   += totalAssertions;
       status.skipped += skippedAssertions;
+      if (failedAssertions > 0) {
+	      status.specsFailed++;
+	    }
     });
 
     phantomjs.on('jasmine.reportJUnitResults',function(junitData){
@@ -203,7 +208,7 @@ module.exports = function(grunt) {
     });
 
     phantomjs.on('jasmine.done.PhantomReporter',function(){
-      phantomjs.emit('jasmine.done');
+      phantomjs.emit('jasmine.done', status);
     });
 
     phantomjs.on('jasmine.done_fail',function(url){
