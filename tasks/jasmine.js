@@ -121,13 +121,14 @@ module.exports = function(grunt) {
     var thisRun = {};
 
     status = {
-      specs    : 0,
-      failed   : 0,
-      passed   : 0,
-      total    : 0,
-      skipped  : 0,
-      duration : 0,
-      log      : ''
+      specs       : 0,
+	    specsFailed : 0,
+      failed      : 0,
+      passed      : 0,
+      total       : 0,
+      skipped     : 0,
+      duration    : 0,
+      log         : ''
     };
 
     phantomjs.on('fail.timeout',function(){
@@ -217,7 +218,8 @@ module.exports = function(grunt) {
         grunt.log.writeln('');
         grunt.log.write(status.log);
       }
-      grunt.log.writeln(spec_str + 'in ' + (dur/1000) + "s.");
+      status.duration = dur/1000;
+      grunt.log.writeln(spec_str + 'in ' + (status.duration) + "s.");
     });
 
     phantomjs.on('jasmine.testDone',function(totalAssertions, passedAssertions, failedAssertions, skippedAssertions){
@@ -226,6 +228,10 @@ module.exports = function(grunt) {
       status.passed  += passedAssertions;
       status.total   += totalAssertions;
       status.skipped += skippedAssertions;
+      
+      if (failedAssertions > 0) {
+	      status.specsFailed++;
+	    }
     });
 
     phantomjs.on('jasmine.reportJUnitResults',function(junitData){
@@ -251,7 +257,7 @@ module.exports = function(grunt) {
     });
 
     phantomjs.on('jasmine.done.PhantomReporter',function(){
-      phantomjs.emit('jasmine.done');
+      phantomjs.emit('jasmine.done', status);
     });
 
     phantomjs.on('jasmine.done_fail',function(url){
